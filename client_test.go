@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -46,6 +47,18 @@ func TestNewClient_Success(t *testing.T) {
 	}
 	if c.Analytics == nil || c.Intelligence == nil || c.Transfers == nil {
 		t.Fatalf("services not initialized")
+	}
+}
+
+func TestBuildURLNormalizesSlashes(t *testing.T) {
+	c, err := NewClient(testAPIKey, WithBaseURL("https://api.example.test/"))
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+
+	got := c.buildURL("/transfers", url.Values{"limit": {"10"}})
+	if want := "https://api.example.test/transfers?limit=10"; got != want {
+		t.Fatalf("buildURL() = %q, want %q", got, want)
 	}
 }
 
@@ -249,6 +262,18 @@ func TestError429(t *testing.T) {
 		if apiErr.RetryAfter != "1" {
 			t.Fatalf("RetryAfter = %q", apiErr.RetryAfter)
 		}
+	}
+}
+
+func TestRetryDelayHTTPDate(t *testing.T) {
+	c, err := NewClient(testAPIKey)
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+
+	delay := c.retryDelay(time.Now().Add(2*time.Second).UTC().Format(http.TimeFormat), 0)
+	if delay <= 0 || delay > 2*time.Second {
+		t.Fatalf("retry delay = %v, want a positive delay no greater than two seconds", delay)
 	}
 }
 
@@ -493,6 +518,40 @@ func TestPaginationMaxPages(t *testing.T) {
 	}
 	if callCount != 2 {
 		t.Fatalf("expected 2 calls, got %d", callCount)
+	}
+}
+
+func TestPaginatorMaxItemsLimitsFinalRequest(t *testing.T) {
+	var limits []string
+	var offsets []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		limits = append(limits, r.URL.Query().Get("limit"))
+		offsets = append(offsets, r.URL.Query().Get("offset"))
+		fmt.Fprint(w, `[]`)
+	}))
+	defer ts.Close()
+
+	c, _ := NewClient(testAPIKey, WithBaseURL(ts.URL), WithMaxRetries(0))
+	p := NewPaginator(context.Background(), c, "/transfers", nil, 10, 23, 0)
+	for p.HasNext() {
+		var out []Transfer
+		if _, err := p.NextPage(&out); err != nil {
+			t.Fatalf("NextPage failed: %v", err)
+		}
+	}
+
+	if got, want := strings.Join(limits, ","), "10,10,3"; got != want {
+		t.Fatalf("limits = %q, want %q", got, want)
+	}
+	if got, want := strings.Join(offsets, ","), "0,10,20"; got != want {
+		t.Fatalf("offsets = %q, want %q", got, want)
+	}
+}
+
+func TestPaginatorDefaultsNonPositivePageSize(t *testing.T) {
+	p := NewPaginator(context.Background(), nil, "/transfers", nil, 0, 0, 0)
+	if p.pageSize != DefaultPageSize {
+		t.Fatalf("pageSize = %d, want %d", p.pageSize, DefaultPageSize)
 	}
 }
 

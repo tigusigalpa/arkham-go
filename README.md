@@ -21,9 +21,26 @@ It handles the REST endpoints and WebSocket v2 streams for you, so you can focus
 
 ## Installation
 
+Requirements: Go 1.21 or newer and an Arkham API key. Create and manage a key
+in your Arkham account, then keep it out of source control:
+
+```bash
+export ARKHAM_API_KEY="your-api-key"
+```
+
+On PowerShell:
+
+```powershell
+$env:ARKHAM_API_KEY = "your-api-key"
+```
+
+Install the module in your application:
+
 ```bash
 go get github.com/tigusigalpa/arkham-go
 ```
+
+The SDK has no runtime dependencies outside the Go standard library.
 
 ## Quick start
 
@@ -55,9 +72,31 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Printf("Entity: %s\n", addr.ArkhamEntity.Name)
+    if addr.ArkhamEntity != nil {
+        fmt.Printf("Entity: %s\n", addr.ArkhamEntity.Name)
+    }
     fmt.Printf("Intel:  %s/%s datapoints\n", meta.IntelDatapointsUsage, meta.IntelDatapointsLimit)
 }
+```
+
+`NewClientFromEnv` is useful when the application follows the conventional
+`ARKHAM_API_KEY` environment variable:
+
+```go
+client, err := arkham.NewClientFromEnv()
+if err != nil {
+    return err
+}
+```
+
+Every network method takes a `context.Context`. Use a deadline on work that
+must not outlive a request window:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+address, _, err := client.Intelligence.Address(ctx, "0x28C6c06298d514Db089934071355E5743bf21d60", nil)
 ```
 
 ## Configuration
@@ -74,6 +113,15 @@ client, err := arkham.NewClient(
     arkham.WithUserAgent("my-app/1.0"),
 )
 ```
+
+`WithMaxRetries` is the number of additional attempts after the first request.
+GET requests retry `429` and `5xx` responses by default. The retry delay
+honours `Retry-After` (seconds or an HTTP date); otherwise it uses exponential
+backoff with jitter. Mutating requests do not retry unless the SDK knows the
+endpoint is safe to retry.
+
+When supplying `WithHTTPClient`, configure transport behaviour there; a later
+`WithTimeout` option sets that client's `Timeout` field.
 
 ## Services
 
@@ -104,9 +152,77 @@ client, err := arkham.NewClient(
 | `client.User` | Alerts, entities, and labels |
 | `client.Streams` | WebSocket v2 stream management and connections |
 
+For the endpoint-by-endpoint list, see [API coverage](docs/API-COVERAGE.md).
+
+## Fetching transfers
+
+Filters are expressed with typed option structs and converted to query
+parameters by the SDK. Values such as `UsdGte` are strings to preserve the
+decimal representation expected by the API.
+
+```go
+filter := &arkham.TransferFilter{
+    Base:    []string{"binance"},
+    Chains:  []string{"ethereum", "bitcoin"},
+    Flow:    arkham.FlowOut,
+    UsdGte:  "100000",
+    SortKey: arkham.SortKeyTime,
+    SortDir: arkham.SortDirDesc,
+    Limit:   25,
+    TimeRange: &arkham.TimeRange{
+        TimeLast: "24h",
+    },
+}
+
+transfers, meta, err := client.Transfers.Transfers(ctx, filter)
+if err != nil {
+    return err
+}
+for _, transfer := range transfers.Transfers {
+    fmt.Printf("%s → %s: $%s\n", transfer.From, transfer.To, transfer.USD)
+}
+fmt.Println("Datapoints remaining:", meta.IntelDatapointsRemaining)
+```
+
+`TimeLast` cannot be combined with `TimeGte` or `TimeLte`. Call `Validate` if
+you construct filters before issuing a request, or rely on service methods that
+validate their relevant options.
+
+## Pagination
+
+`Paginator` is useful for offset-based list endpoints. It fetches one page at
+a time; it does not infer when the remote list is exhausted, so stop when the
+decoded response is empty. `maxItems` caps the requested total, and the final
+request's `limit` is reduced to the remaining number of items.
+
+```go
+query := url.Values{"from": {"0x28C6c06298d514Db089934071355E5743bf21d60"}}
+pages := arkham.NewPaginator(ctx, client, "/transfers", query,
+    100,  // items per page
+    500,  // at most 500 items requested (0 means unlimited)
+    10,   // at most 10 requests (0 means unlimited)
+)
+
+for pages.HasNext() {
+    var page []arkham.Transfer
+    if _, err := pages.NextPage(&page); err != nil {
+        return err
+    }
+    if len(page) == 0 {
+        break
+    }
+    // Process page before requesting the next one.
+}
+```
+
+A non-positive page size uses `arkham.DefaultPageSize` (100), preventing
+repeated requests for offset zero.
+
 ## WebSocket v2
 
 ```go
+ctx := context.Background()
+
 // 1. Create a stream
 stream, _, err := client.Streams.Create(ctx, &arkham.CreateStreamV2Request{
     Base:   []string{"binance"},
@@ -115,6 +231,9 @@ stream, _, err := client.Streams.Create(ctx, &arkham.CreateStreamV2Request{
 
 // 2. Connect
 conn, err := client.Streams.Connect(ctx, stream.StreamID)
+if err != nil {
+    return err
+}
 defer conn.Close()
 
 // 3. Receive transfers
@@ -130,6 +249,26 @@ for {
 client.Streams.Delete(ctx, stream.StreamID)
 ```
 
+The stream filter must include `Base`, `From`, `To`, or `Tokens`; alternatively
+it may use `UsdGte` of at least `250000`. Delete streams you no longer use.
+If a connection drops, call `conn.Reconnect(ctx)` within the API's reactivation
+window and continue receiving with `Receive` or `ReceiveTyped`.
+
+Runnable programs are available in
+[`examples/`](examples): `intelligence`, `transfers`, `pagination`, and
+`websocket`. For example:
+
+```bash
+go run ./examples/transfers
+```
+
+## Response metadata and errors
+
+Each successful service call returns `*arkham.ResponseMetadata` alongside its
+decoded value. It contains the HTTP status, request duration, final URL, and
+the `X-Intel-Datapoints-*` headers. This makes it straightforward to record
+credit consumption without parsing headers yourself.
+
 ## Error handling
 
 ```go
@@ -143,6 +282,20 @@ if err != nil {
         fmt.Printf("Status: %d, Message: %s\n", apiErr.StatusCode, apiErr.Message)
     }
 }
+```
+
+`APIError` also exposes `StatusCode`, a short response-body excerpt,
+`RetryAfter`, and the datapoint headers. Transport failures and cancelled
+contexts are wrapped with `%w`, so standard `errors.Is` / `errors.As` handling
+works throughout.
+
+## Development
+
+Run the test suite and static checks from the module root:
+
+```bash
+go test ./...
+go vet ./...
 ```
 
 ## License

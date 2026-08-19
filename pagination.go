@@ -5,6 +5,11 @@ import (
 	"net/url"
 )
 
+// DefaultPageSize is used when NewPaginator receives a non-positive page
+// size. It keeps offsets advancing and prevents accidental repeated requests
+// for the first page.
+const DefaultPageSize = 100
+
 // Paginator provides offset-based pagination for list endpoints.
 // It fetches one page at a time and never eagerly traverses all pages.
 type Paginator struct {
@@ -25,6 +30,9 @@ type Paginator struct {
 // fetched (0 = unlimited), maxPages caps the number of page requests
 // (0 = unlimited).
 func NewPaginator(ctx context.Context, client *Client, path string, query url.Values, pageSize, maxItems, maxPages int) *Paginator {
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
 	return &Paginator{
 		client:   client,
 		ctx:      ctx,
@@ -67,9 +75,14 @@ func (p *Paginator) NextPage(out interface{}) (*ResponseMetadata, error) {
 	for k, v := range p.query {
 		q[k] = v
 	}
-	if p.pageSize > 0 {
-		q.Set("limit", intToString(p.pageSize))
+	limit := p.pageSize
+	if p.maxItems > 0 {
+		remaining := p.maxItems - p.totalFetched
+		if remaining < limit {
+			limit = remaining
+		}
 	}
+	q.Set("limit", intToString(limit))
 	q.Set("offset", intToString(p.offset))
 
 	meta, err := p.client.get(p.ctx, p.path, q, out)
@@ -78,7 +91,8 @@ func (p *Paginator) NextPage(out interface{}) (*ResponseMetadata, error) {
 	}
 
 	p.pageCount++
-	p.offset += p.pageSize
+	p.totalFetched += limit
+	p.offset += limit
 	return meta, nil
 }
 

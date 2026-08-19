@@ -133,7 +133,7 @@ func (c *Client) doWithBody(ctx context.Context, method, path string, query url.
 
 // buildURL constructs the full request URL with query parameters.
 func (c *Client) buildURL(path string, query url.Values) string {
-	fullURL := c.baseURL + path
+	fullURL := strings.TrimRight(c.baseURL, "/") + "/" + strings.TrimLeft(path, "/")
 	if len(query) > 0 {
 		fullURL += "?" + query.Encode()
 	}
@@ -168,12 +168,19 @@ func isRetryable(statusCode int) bool {
 	return statusCode == 429 || statusCode >= 500
 }
 
-// retryDelay computes the delay before the next retry. It honors
-// Retry-After if present, otherwise uses exponential backoff with jitter.
+// retryDelay computes the delay before the next retry. It honors Retry-After
+// values expressed as either seconds or an HTTP date; otherwise it uses
+// exponential backoff with jitter.
 func (c *Client) retryDelay(retryAfter string, attempt int) time.Duration {
-	if retryAfter != "" {
-		if secs, err := strconv.Atoi(strings.TrimSpace(retryAfter)); err == nil && secs >= 0 {
+	if retryAfter = strings.TrimSpace(retryAfter); retryAfter != "" {
+		if secs, err := strconv.Atoi(retryAfter); err == nil && secs >= 0 {
 			return time.Duration(secs) * time.Second
+		}
+		if retryAt, err := http.ParseTime(retryAfter); err == nil {
+			if delay := time.Until(retryAt); delay > 0 {
+				return delay
+			}
+			return 0
 		}
 	}
 	base := c.baseDelay
