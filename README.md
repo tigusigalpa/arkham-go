@@ -1,19 +1,23 @@
-# arkham-go
+# Arkham Golang library
 
-A production-quality Go SDK for the [Arkham Intel API](https://arkm.com).
+![Arkham Intel Golang library](https://i.postimg.cc/yYPnLb5s/arkham-golang-github.jpg)
 
-## Features
+A friendly, production-ready Go SDK for the [Arkham Intel API](https://arkm.com).
 
-- **Complete API coverage** — All documented REST endpoints and WebSocket v2 transfer streams
-- **Strongly typed** — Idiomatic Go structs for every request and response
-- **Context-aware** — All methods accept `context.Context` for cancellation and deadlines
-- **Functional options** — Configure base URL, timeout, retries, HTTP client, logger
-- **Automatic retry** — Exponential backoff with jitter on 429 and 5xx, respects `Retry-After`
-- **Typed errors** — Sentinel errors (`ErrBadRequest`, `ErrUnauthorized`, `ErrRateLimited`, etc.) with `errors.Is`/`errors.As` support
-- **Credit safety** — Response metadata preserves `X-Intel-Datapoints-*` headers
-- **Offset pagination** — Caller-controlled paginator with max items/pages limits
-- **WebSocket v2** — Full stream lifecycle: create, connect, receive, reconnect, delete
-- **Zero dependencies** — Standard library only
+It handles the REST endpoints and WebSocket v2 streams for you, so you can focus on building with on-chain intelligence instead of wrestling with HTTP plumbing.
+
+## What you get
+
+- **Full API coverage** — every documented REST endpoint and WebSocket v2 transfer stream, ready to use.
+- **Idiomatic Go** — strongly typed structs for every request and response, so your IDE can help you.
+- **Context support** — every method accepts `context.Context` for cancellation and deadlines.
+- **Flexible configuration** — tune the base URL, timeout, retries, HTTP client, and logger with functional options.
+- **Smart retries** — exponential backoff with jitter on `429` and `5xx`, and it respects `Retry-After`.
+- **Typed errors** — sentinel errors like `ErrBadRequest`, `ErrUnauthorized`, and `ErrRateLimited`, all compatible with `errors.Is` and `errors.As`.
+- **Credit tracking** — response metadata keeps the `X-Intel-Datapoints-*` headers close at hand.
+- **Pagination that behaves** — caller-controlled offset pagination with limits on items and pages.
+- **WebSocket v2 made simple** — create, connect, receive, reconnect, and delete streams without fuss.
+- **No external dependencies** — everything is built on the Go standard library.
 
 ## Installation
 
@@ -21,7 +25,7 @@ A production-quality Go SDK for the [Arkham Intel API](https://arkm.com).
 go get github.com/tigusigalpa/arkham-go
 ```
 
-## Quick Start
+## Quick start
 
 ```go
 package main
@@ -41,7 +45,7 @@ func main() {
         log.Fatal(err)
     }
 
-    // Look up address intelligence
+    // Look up intelligence for an address
     addr, meta, err := client.Intelligence.Address(
         context.Background(),
         "0x28C6c06298d514Db089934071355E5743bf21d60",
@@ -58,6 +62,8 @@ func main() {
 
 ## Configuration
 
+Fine-tune the client when you create it:
+
 ```go
 client, err := arkham.NewClient(
     apiKey,
@@ -71,32 +77,32 @@ client, err := arkham.NewClient(
 
 ## Services
 
-| Service | Endpoints |
-|---------|-----------|
-| `client.Analytics` | Credit periods, endpoint calls |
+| Service | What it covers |
+|---------|----------------|
+| `client.Analytics` | Credit periods and endpoint calls |
 | `client.Arkham` | ARKM circulating supply |
-| `client.Balances` | Address/entity balances, Solana subaccounts |
+| `client.Balances` | Address/entity balances and Solana subaccounts |
 | `client.Chains` | Supported chains |
 | `client.Cluster` | Cluster summaries |
 | `client.Counterparties` | Address/entity counterparties |
 | `client.Flow` | Historical USD flow |
 | `client.History` | Historical balance snapshots |
-| `client.Hypercore` | HyperCore markets, positions, trades |
-| `client.Intelligence` | Address/entity intelligence, search, updates |
-| `client.Loans` | Loan/borrow positions |
-| `client.MarketData` | Altcoin index, trending tokens |
+| `client.Hypercore` | HyperCore markets, positions, and trades |
+| `client.Intelligence` | Address/entity intelligence, search, and updates |
+| `client.Loans` | Loan and borrow positions |
+| `client.MarketData` | Altcoin index and trending tokens |
 | `client.Networks` | Network status and history |
-| `client.Polymarket` | Events, positions, orderbook, leaderboard |
+| `client.Polymarket` | Events, positions, orderbook, and leaderboard |
 | `client.Portfolio` | Historical portfolio snapshots |
-| `client.Risk` | Risk scores (beta), batch, paths, sources |
+| `client.Risk` | Risk scores (beta), batch checks, paths, and sources |
 | `client.Subscription` | Intel usage |
 | `client.Swaps` | Token swaps |
 | `client.Tag` | Tag summaries and updates |
-| `client.Token` | Market data, price history, holders, volume |
-| `client.Transfers` | Enriched/unenriched transfers, histograms, volume |
+| `client.Token` | Market data, price history, holders, and volume |
+| `client.Transfers` | Enriched/unenriched transfers, histograms, and volume |
 | `client.Tx` | Transaction details |
-| `client.User` | Alerts, entities, labels |
-| `client.Streams` | WebSocket v2 stream management + connection |
+| `client.User` | Alerts, entities, and labels |
+| `client.Streams` | WebSocket v2 stream management and connections |
 
 ## WebSocket v2
 
@@ -120,11 +126,11 @@ for {
     fmt.Println(msg.Type, string(msg.Payload))
 }
 
-// 4. Delete when done
+// 4. Delete when you are done
 client.Streams.Delete(ctx, stream.StreamID)
 ```
 
-## Error Handling
+## Error handling
 
 ```go
 addr, _, err := client.Intelligence.Address(ctx, "0xabc", nil)
