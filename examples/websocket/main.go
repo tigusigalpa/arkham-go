@@ -46,7 +46,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Connect failed: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("Close stream connection failed: %v", err)
+		}
+	}()
 
 	// Step 3: Receive transfers for 30 seconds
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -54,7 +58,9 @@ func main() {
 
 	go func() {
 		<-ctx.Done()
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			log.Printf("Close stream connection failed: %v", err)
+		}
 	}()
 
 	for {

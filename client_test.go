@@ -167,7 +167,7 @@ func TestDELETERequest(t *testing.T) {
 func TestError400(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		fmt.Fprintf(w, `{"error":"invalid parameter"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"invalid parameter"}`)
 	}))
 	defer ts.Close()
 
@@ -194,7 +194,7 @@ func TestError400(t *testing.T) {
 func TestError401(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
-		fmt.Fprintf(w, `{"error":"unauthorized"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"unauthorized"}`)
 	}))
 	defer ts.Close()
 
@@ -208,7 +208,7 @@ func TestError401(t *testing.T) {
 func TestError403(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(403)
-		fmt.Fprintf(w, `{"error":"forbidden"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"forbidden"}`)
 	}))
 	defer ts.Close()
 
@@ -222,7 +222,7 @@ func TestError403(t *testing.T) {
 func TestError404(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, `{"error":"not found"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"not found"}`)
 	}))
 	defer ts.Close()
 
@@ -237,7 +237,7 @@ func TestError429(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Retry-After", "1")
 		w.WriteHeader(429)
-		fmt.Fprintf(w, `{"error":"rate limited"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"rate limited"}`)
 	}))
 	defer ts.Close()
 
@@ -269,7 +269,7 @@ func TestRetryDelayHTTPDate(t *testing.T) {
 func TestError500(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"error":"internal server error"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"internal server error"}`)
 	}))
 	defer ts.Close()
 
@@ -283,7 +283,7 @@ func TestError500(t *testing.T) {
 func TestErrorNonJSON(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		fmt.Fprintf(w, "plain text error")
+		_, _ = fmt.Fprintf(w, "plain text error")
 	}))
 	defer ts.Close()
 
@@ -308,11 +308,11 @@ func TestRetryOn429(t *testing.T) {
 		if calls < 3 {
 			w.Header().Set("Retry-After", "0")
 			w.WriteHeader(429)
-			fmt.Fprintf(w, `{"error":"rate limited"}`)
+			_, _ = fmt.Fprintf(w, `{"error":"rate limited"}`)
 			return
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
+		_, _ = fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
 	}))
 	defer ts.Close()
 
@@ -336,7 +336,7 @@ func TestRetryExhausted(t *testing.T) {
 		calls++
 		w.Header().Set("Retry-After", "0")
 		w.WriteHeader(429)
-		fmt.Fprintf(w, `{"error":"rate limited"}`)
+		_, _ = fmt.Fprintf(w, `{"error":"rate limited"}`)
 	}))
 	defer ts.Close()
 
@@ -375,7 +375,7 @@ func TestIntelUsageHeaders(t *testing.T) {
 		w.Header().Set("X-Intel-Datapoints-Limit", "10000")
 		w.Header().Set("X-Intel-Datapoints-Remaining", "5000")
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"totalCount":5000,"totalLimit":10000,"periodStart":"2024-01-01"}`)
+		_, _ = fmt.Fprintf(w, `{"totalCount":5000,"totalLimit":10000,"periodStart":"2024-01-01"}`)
 	}))
 	defer ts.Close()
 
@@ -462,9 +462,9 @@ func TestPagination(t *testing.T) {
 		offset := r.URL.Query().Get("offset")
 		w.Header().Set("Content-Type", "application/json")
 		if callCount <= 2 {
-			fmt.Fprintf(w, `[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]`)
+			_, _ = fmt.Fprintf(w, `[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]`)
 		} else {
-			fmt.Fprintf(w, `[]`)
+			_, _ = fmt.Fprintf(w, `[]`)
 		}
 		_ = limit
 		_ = offset
@@ -492,7 +492,7 @@ func TestPaginationMaxPages(t *testing.T) {
 	callCount := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		fmt.Fprintf(w, `[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]`)
+		_, _ = fmt.Fprintf(w, `[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]`)
 	}))
 	defer ts.Close()
 
@@ -560,7 +560,7 @@ func TestEmptyResponse(t *testing.T) {
 func TestMalformedJSON(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{invalid json`)
+		_, _ = fmt.Fprintf(w, `{invalid json`)
 	}))
 	defer ts.Close()
 
@@ -575,7 +575,7 @@ func TestMalformedJSON(t *testing.T) {
 func TestUnknownFieldsTolerated(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false,"newField":"value","anotherNew":123}`)
+		_, _ = fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false,"newField":"value","anotherNew":123}`)
 	}))
 	defer ts.Close()
 
@@ -596,7 +596,7 @@ func TestIntelligenceAddress(t *testing.T) {
 			t.Fatalf("path = %q", r.URL.Path)
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
+		_, _ = fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
 	}))
 	defer ts.Close()
 
@@ -620,7 +620,7 @@ func TestIntelligenceSearch(t *testing.T) {
 			t.Fatalf("arkhamEntities = %q", q.Get("arkhamEntities"))
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"arkhamEntities":[{"id":"binance","name":"Binance","note":"","service":true,"type":"cex"}]}`)
+		_, _ = fmt.Fprintf(w, `{"arkhamEntities":[{"id":"binance","name":"Binance","note":"","service":true,"type":"cex"}]}`)
 	}))
 	defer ts.Close()
 
@@ -648,7 +648,7 @@ func TestTransfersWithFilter(t *testing.T) {
 			t.Fatalf("limit = %q", q.Get("limit"))
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"transfers":[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]}`)
+		_, _ = fmt.Fprintf(w, `{"transfers":[{"chain":"ethereum","value":"1.0","from":"0xa","to":"0xb","time":"2024-01-01T00:00:00Z"}]}`)
 	}))
 	defer ts.Close()
 
@@ -669,7 +669,7 @@ func TestBalancesAddress(t *testing.T) {
 			t.Fatalf("path = %q", r.URL.Path)
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"balances":{"ethereum":[]},"totalBalance":{"ethereum":0},"addresses":{}}`)
+		_, _ = fmt.Fprintf(w, `{"balances":{"ethereum":[]},"totalBalance":{"ethereum":0},"addresses":{}}`)
 	}))
 	defer ts.Close()
 
@@ -686,7 +686,7 @@ func TestBalancesAddress(t *testing.T) {
 func TestChainsList(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `[{"id":"ethereum","name":"Ethereum","chainType":"evm"}]`)
+		_, _ = fmt.Fprintf(w, `[{"id":"ethereum","name":"Ethereum","chainType":"evm"}]`)
 	}))
 	defer ts.Close()
 
@@ -706,7 +706,7 @@ func TestChainsList(t *testing.T) {
 func TestUserAlerts(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `[{"id":1,"name":"test","enabled":true,"alertMethodId":1}]`)
+		_, _ = fmt.Fprintf(w, `[{"id":1,"name":"test","enabled":true,"alertMethodId":1}]`)
 	}))
 	defer ts.Close()
 
@@ -728,7 +728,7 @@ func TestUserCreateAlert(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotMethod = r.Method
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"id":1,"name":"test","enabled":true,"alertMethodId":1}`)
+		_, _ = fmt.Fprintf(w, `{"id":1,"name":"test","enabled":true,"alertMethodId":1}`)
 	}))
 	defer ts.Close()
 
@@ -749,7 +749,7 @@ func TestUserCreateAlert(t *testing.T) {
 func TestStreamCreate(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"streamId":"abc-123","id":1}`)
+		_, _ = fmt.Fprintf(w, `{"streamId":"abc-123","id":1}`)
 	}))
 	defer ts.Close()
 
@@ -776,7 +776,7 @@ func TestStreamCreateInvalidFilter(t *testing.T) {
 func TestStreamList(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `[{"streamId":"abc","id":1}]`)
+		_, _ = fmt.Fprintf(w, `[{"streamId":"abc","id":1}]`)
 	}))
 	defer ts.Close()
 
@@ -793,7 +793,7 @@ func TestStreamList(t *testing.T) {
 func TestStreamDelete(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"success":true}`)
+		_, _ = fmt.Fprintf(w, `{"success":true}`)
 	}))
 	defer ts.Close()
 
@@ -810,7 +810,7 @@ func TestStreamDelete(t *testing.T) {
 func TestRiskAddress(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"chain_type":"ethereum","address":"0xabc","risk_level":"low","is_seed":false}`)
+		_, _ = fmt.Fprintf(w, `{"chain_type":"ethereum","address":"0xabc","risk_level":"low","is_seed":false}`)
 	}))
 	defer ts.Close()
 
@@ -831,7 +831,7 @@ func TestPolymarketEvents(t *testing.T) {
 			t.Fatalf("limit = %q", q.Get("limit"))
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"events":[{"id":"1","active":true}],"count":1}`)
+		_, _ = fmt.Fprintf(w, `{"events":[{"id":"1","active":true}],"count":1}`)
 	}))
 	defer ts.Close()
 
@@ -849,7 +849,7 @@ func TestPolymarketEvents(t *testing.T) {
 func TestHypercoreMarkets(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"markets":[{"name":"Bitcoin","pricingId":"bitcoin","symbol":"BTC"}]}`)
+		_, _ = fmt.Fprintf(w, `{"markets":[{"name":"Bitcoin","pricingId":"bitcoin","symbol":"BTC"}]}`)
 	}))
 	defer ts.Close()
 
@@ -869,7 +869,7 @@ func TestHypercoreMarkets(t *testing.T) {
 func TestArkhamCirculating(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"circulating":1000000.0}`)
+		_, _ = fmt.Fprintf(w, `{"circulating":1000000.0}`)
 	}))
 	defer ts.Close()
 
@@ -888,7 +888,7 @@ func TestQueryParamsEncoding(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"transfers":[]}`)
+		_, _ = fmt.Fprintf(w, `{"transfers":[]}`)
 	}))
 	defer ts.Close()
 
@@ -949,11 +949,11 @@ func TestPOSTRetryPreservesBody(t *testing.T) {
 		if calls < 2 {
 			w.Header().Set("Retry-After", "0")
 			w.WriteHeader(429)
-			fmt.Fprintf(w, `{"error":"rate limited"}`)
+			_, _ = fmt.Fprintf(w, `{"error":"rate limited"}`)
 			return
 		}
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"streamId":"abc","id":1}`)
+		_, _ = fmt.Fprintf(w, `{"streamId":"abc","id":1}`)
 	}))
 	defer ts.Close()
 
@@ -1014,7 +1014,7 @@ func TestMaskedFrameIsMasked(t *testing.T) {
 func TestJSONRawMessage(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		fmt.Fprintf(w, `{"key":"value","nested":{"a":1}}`)
+		_, _ = fmt.Fprintf(w, `{"key":"value","nested":{"a":1}}`)
 	}))
 	defer ts.Close()
 
