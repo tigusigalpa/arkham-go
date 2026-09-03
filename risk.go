@@ -54,7 +54,7 @@ func (s *RiskService) BatchEntities(ctx context.Context, entities []string) ([]R
 	return out, meta, err
 }
 
-// RiskSources retrieves risk sources for an address.
+// Sources retrieves risk sources for an address.
 // Path: GET /risk/sources/address/{address}
 func (s *RiskService) Sources(ctx context.Context, address string) ([]RiskSource, *ResponseMetadata, error) {
 	var out []RiskSource
@@ -62,7 +62,7 @@ func (s *RiskService) Sources(ctx context.Context, address string) ([]RiskSource
 	return out, meta, err
 }
 
-// RiskEntitySources retrieves risk sources for an entity.
+// EntitySources retrieves risk sources for an entity.
 // Path: GET /risk/sources/entity/{entity}
 func (s *RiskService) EntitySources(ctx context.Context, entity string) ([]RiskSource, *ResponseMetadata, error) {
 	var out []RiskSource
@@ -70,7 +70,7 @@ func (s *RiskService) EntitySources(ctx context.Context, entity string) ([]RiskS
 	return out, meta, err
 }
 
-// RiskEntityPaths retrieves risk paths for an entity.
+// EntityPaths retrieves risk paths for an entity.
 // Path: GET /risk/paths/entity/{entity}
 func (s *RiskService) EntityPaths(ctx context.Context, entity string) (*RiskPathsResponse, *ResponseMetadata, error) {
 	var out RiskPathsResponse
@@ -78,7 +78,7 @@ func (s *RiskService) EntityPaths(ctx context.Context, entity string) (*RiskPath
 	return &out, meta, err
 }
 
-// RiskSummary retrieves a risk summary for an address.
+// Summary retrieves a risk summary for an address.
 // Path: GET /risk/summary/address/{address}
 func (s *RiskService) Summary(ctx context.Context, address string) (*RiskScoreResponse, *ResponseMetadata, error) {
 	q := url.Values{}

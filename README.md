@@ -2,6 +2,15 @@
 
 ![Arkham Intel Golang library](https://i.postimg.cc/yYPnLb5s/arkham-golang-github.jpg)
 
+[![CI](https://github.com/tigusigalpa/arkham-go/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tigusigalpa/arkham-go/actions/workflows/ci.yml)
+[![Tests](https://github.com/tigusigalpa/arkham-go/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/tigusigalpa/arkham-go/actions/workflows/test.yml)
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://golang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![CodeQL](https://github.com/tigusigalpa/arkham-go/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/tigusigalpa/arkham-go/actions/workflows/codeql.yml)
+[![Codecov](https://codecov.io/gh/tigusigalpa/arkham-go/graph/badge.svg)](https://codecov.io/gh/tigusigalpa/arkham-go)
+[![GitHub Release](https://img.shields.io/github/v/release/tigusigalpa/arkham-go?style=flat-square)](https://github.com/tigusigalpa/arkham-go/releases)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue?style=flat-square&logo=go)](https://pkg.go.dev/github.com/tigusigalpa/arkham-go)
+
 A friendly, production-ready Go SDK for the [Arkham Intel API](https://arkm.com).
 
 It handles the REST endpoints and WebSocket v2 streams for you, so you can focus on building with on-chain intelligence instead of wrestling with HTTP plumbing.

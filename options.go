@@ -9,6 +9,7 @@ import (
 // SortKey represents a sort field for list endpoints.
 type SortKey string
 
+// SortKey constants identify sortable fields for list endpoints.
 const (
 	SortKeyTime  SortKey = "time"
 	SortKeyValue SortKey = "value"
@@ -18,6 +19,7 @@ const (
 // SortDir represents a sort direction.
 type SortDir string
 
+// SortDir constants identify sort directions for list endpoints.
 const (
 	SortDirDesc SortDir = "desc"
 	SortDirAsc  SortDir = "asc"
@@ -26,6 +28,7 @@ const (
 // FlowDirection represents the flow direction filter.
 type FlowDirection string
 
+// FlowDirection constants identify transfer flow directions.
 const (
 	FlowIn   FlowDirection = "in"
 	FlowOut  FlowDirection = "out"

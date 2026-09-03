@@ -41,7 +41,7 @@ type Client struct {
 	// Analytics provides access to analytics endpoints.
 	Analytics *AnalyticsService
 	// Arkham provides access to ARKM token endpoints.
-	Arkham *ArkhamService
+	Arkham *Service
 	// Balances provides access to balance endpoints.
 	Balances *BalancesService
 	// Chains provides access to chain endpoints.
@@ -128,7 +128,7 @@ func NewClientFromEnv(opts ...Option) (*Client, error) {
 // initServices creates all service structs and wires them to the client.
 func (c *Client) initServices() {
 	c.Analytics = &AnalyticsService{client: c}
-	c.Arkham = &ArkhamService{client: c}
+	c.Arkham = &Service{client: c}
 	c.Balances = &BalancesService{client: c}
 	c.Chains = &ChainsService{client: c}
 	c.Cluster = &ClusterService{client: c}

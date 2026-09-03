@@ -11,7 +11,7 @@ type BalancesService struct {
 	client *Client
 }
 
-// AddressBalances retrieves token balances for an address.
+// Address retrieves token balances for an address.
 // Path: GET /balances/address/{address}
 func (s *BalancesService) Address(ctx context.Context, address string, filter *ChainsFilter) (*AddressBalancesResponse, *ResponseMetadata, error) {
 	q := url.Values{}
@@ -21,7 +21,7 @@ func (s *BalancesService) Address(ctx context.Context, address string, filter *C
 	return &out, meta, err
 }
 
-// EntityBalances retrieves token balances for an entity.
+// Entity retrieves token balances for an entity.
 // Path: GET /balances/entity/{entity}
 func (s *BalancesService) Entity(ctx context.Context, entity string, filter *ChainsFilter) (*EntityBalancesResponse, *ResponseMetadata, error) {
 	q := url.Values{}
