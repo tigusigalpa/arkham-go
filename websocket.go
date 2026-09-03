@@ -62,7 +62,7 @@ func wsDial(ctx context.Context, wsURL, apiKey string) (wsConnAdapter, error) {
 	// Generate Sec-WebSocket-Key
 	keyBytes := make([]byte, 16)
 	if _, err := rand.Read(keyBytes); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("arkham: failed to generate websocket key: %w", err)
 	}
 	wsKey := base64.StdEncoding.EncodeToString(keyBytes)
@@ -90,7 +90,7 @@ func wsDial(ctx context.Context, wsURL, apiKey string) (wsConnAdapter, error) {
 
 	_, err = conn.Write([]byte(reqStr))
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("arkham: failed to send websocket upgrade: %w", err)
 	}
 
@@ -99,12 +99,12 @@ func wsDial(ctx context.Context, wsURL, apiKey string) (wsConnAdapter, error) {
 	// Read the HTTP upgrade response
 	respLine, err := reader.ReadString('\n')
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("arkham: failed to read websocket response: %w", err)
 	}
 
 	if !contains(respLine, "101") {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("arkham: websocket upgrade failed: %s", respLine)
 	}
 
@@ -112,7 +112,7 @@ func wsDial(ctx context.Context, wsURL, apiKey string) (wsConnAdapter, error) {
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, fmt.Errorf("arkham: failed to read websocket headers: %w", err)
 		}
 		if line == "\r\n" || line == "\n" {
@@ -137,7 +137,9 @@ func (w *wsConn) ReadMessage() (json.RawMessage, error) {
 			return nil, fmt.Errorf("arkham: websocket closed by server")
 		}
 		if frame.opcode == 0x9 { // Ping frame — send pong
-			w.writePong(frame.data)
+			if err := w.writePong(frame.data); err != nil {
+				return nil, fmt.Errorf("arkham: failed to send websocket pong: %w", err)
+			}
 			continue
 		}
 		if frame.opcode == 0xA { // Pong frame — skip
@@ -178,13 +180,14 @@ func (w *wsConn) readFrame() (*wsFrame, error) {
 	masked := header[1]&0x80 != 0
 	length := int64(header[1] & 0x7F)
 
-	if length == 126 {
+	switch length {
+	case 126:
 		extLen := make([]byte, 2)
 		if _, err := io.ReadFull(w.reader, extLen); err != nil {
 			return nil, fmt.Errorf("arkham: failed to read extended length: %w", err)
 		}
 		length = int64(binary.BigEndian.Uint16(extLen))
-	} else if length == 127 {
+	case 127:
 		extLen := make([]byte, 8)
 		if _, err := io.ReadFull(w.reader, extLen); err != nil {
 			return nil, fmt.Errorf("arkham: failed to read extended length: %w", err)
@@ -216,8 +219,9 @@ func (w *wsConn) readFrame() (*wsFrame, error) {
 
 // writePong sends a masked pong frame in response to a ping. Per RFC 6455
 // §5.1, all frames sent from client to server MUST be masked.
-func (w *wsConn) writePong(data []byte) {
-	w.conn.Write(maskedFrame(0x0A, data))
+func (w *wsConn) writePong(data []byte) error {
+	_, err := w.conn.Write(maskedFrame(0x0A, data))
+	return err
 }
 
 // Close closes the WebSocket connection, sending a masked close frame
@@ -227,8 +231,14 @@ func (w *wsConn) Close() error {
 		return nil
 	}
 	w.closed = true
-	w.conn.Write(maskedFrame(0x08, nil))
-	return w.conn.Close()
+	if _, err := w.conn.Write(maskedFrame(0x08, nil)); err != nil {
+		_ = w.conn.Close()
+		return fmt.Errorf("arkham: failed to send websocket close frame: %w", err)
+	}
+	if err := w.conn.Close(); err != nil {
+		return fmt.Errorf("arkham: failed to close websocket connection: %w", err)
+	}
+	return nil
 }
 
 // maskedFrame builds a single-frame, masked WebSocket control frame

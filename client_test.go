@@ -16,17 +16,6 @@ import (
 
 const testAPIKey = "test-key-12345"
 
-func testClient(t *testing.T, handler http.HandlerFunc) *Client {
-	t.Helper()
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
-	c, err := NewClient(testAPIKey, WithBaseURL(ts.URL), WithMaxRetries(0))
-	if err != nil {
-		t.Fatalf("NewClient failed: %v", err)
-	}
-	return c
-}
-
 func TestNewClient_EmptyKey(t *testing.T) {
 	_, err := NewClient("")
 	if !errors.Is(err, ErrMissingAPIKey) {
@@ -71,7 +60,7 @@ func TestAPIKeyHeader(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := NewClient(testAPIKey, WithBaseURL(ts.URL), WithMaxRetries(0))
-	c.get(context.Background(), "/test", nil, nil)
+	_, _ = c.get(context.Background(), "/test", nil, nil)
 
 	if gotKey != testAPIKey {
 		t.Fatalf("API-Key header = %q, want %q", gotKey, testAPIKey)
@@ -87,7 +76,7 @@ func TestUserAgentHeader(t *testing.T) {
 	defer ts.Close()
 
 	c, _ := NewClient(testAPIKey, WithBaseURL(ts.URL), WithMaxRetries(0))
-	c.get(context.Background(), "/test", nil, nil)
+	_, _ = c.get(context.Background(), "/test", nil, nil)
 
 	if gotUA != DefaultUserAgent {
 		t.Fatalf("User-Agent = %q, want %q", gotUA, DefaultUserAgent)
@@ -100,7 +89,7 @@ func TestGETRequest(t *testing.T) {
 		gotMethod = r.Method
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
+		_, _ = fmt.Fprint(w, `{"address":"0xabc","chain":"ethereum","contract":false,"isUserAddress":false}`)
 	}))
 	defer ts.Close()
 
@@ -131,7 +120,7 @@ func TestPOSTRequest(t *testing.T) {
 		gotMethod = r.Method
 		gotBody, _ = io.ReadAll(r.Body)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"streamId":"test-stream-id","id":1}`)
+		_, _ = fmt.Fprint(w, `{"streamId":"test-stream-id","id":1}`)
 	}))
 	defer ts.Close()
 
@@ -157,7 +146,7 @@ func TestDELETERequest(t *testing.T) {
 	var gotMethod string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotMethod = r.Method
-		fmt.Fprintf(w, `{"success":true}`)
+		_, _ = fmt.Fprint(w, `{"success":true}`)
 	}))
 	defer ts.Close()
 
@@ -527,7 +516,7 @@ func TestPaginatorMaxItemsLimitsFinalRequest(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		limits = append(limits, r.URL.Query().Get("limit"))
 		offsets = append(offsets, r.URL.Query().Get("offset"))
-		fmt.Fprint(w, `[]`)
+		_, _ = fmt.Fprint(w, `[]`)
 	}))
 	defer ts.Close()
 

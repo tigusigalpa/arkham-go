@@ -19,12 +19,6 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, out int
 	return c.do(ctx, http.MethodGet, path, query, nil, out, true, 0)
 }
 
-// getNoRetry performs an HTTP GET without retry (for non-idempotent
-// or caller-managed retry scenarios).
-func (c *Client) getNoRetry(ctx context.Context, path string, query url.Values, out interface{}) (*ResponseMetadata, error) {
-	return c.do(ctx, http.MethodGet, path, query, nil, out, false, 0)
-}
-
 // post performs an HTTP POST with a JSON body.
 func (c *Client) post(ctx context.Context, path string, body interface{}, out interface{}) (*ResponseMetadata, error) {
 	return c.doWithBody(ctx, http.MethodPost, path, nil, body, out, false, 0)
@@ -79,7 +73,7 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 		}
 		return nil, fmt.Errorf("arkham: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	meta := c.captureMetadata(resp, fullURL, elapsed)
 

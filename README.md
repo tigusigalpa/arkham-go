@@ -1,4 +1,4 @@
-# Arkham Golang library
+# Arkham Golang Client/SDK/Library
 
 ![Arkham Intel Golang library](https://i.postimg.cc/yYPnLb5s/arkham-golang-github.jpg)
 
