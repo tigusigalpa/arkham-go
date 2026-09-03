@@ -58,7 +58,7 @@ func TestServiceEndpointsIssueRequests(t *testing.T) {
 }
 
 func isService(value reflect.Value) bool {
-	return value.Kind() == reflect.Ptr && !value.IsNil() && strings.HasSuffix(value.Type().Elem().Name(), "Service")
+	return value.Kind() == reflect.Pointer && !value.IsNil() && strings.HasSuffix(value.Type().Elem().Name(), "Service")
 }
 
 func endpointArguments(methodType reflect.Type) []reflect.Value {
@@ -87,7 +87,7 @@ func endpointArgument(argumentType reflect.Type) reflect.Value {
 		value := reflect.MakeSlice(argumentType, 1, 1)
 		value.Index(0).Set(endpointArgument(argumentType.Elem()))
 		return value
-	case reflect.Ptr:
+	case reflect.Pointer:
 		value := reflect.New(argumentType.Elem())
 		populateEndpointValue(value.Elem())
 		return value
@@ -106,7 +106,7 @@ func populateEndpointValue(value reflect.Value) {
 	}
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Field(i)
-		if !field.CanSet() || field.Kind() == reflect.Ptr {
+		if !field.CanSet() || field.Kind() == reflect.Pointer {
 			continue
 		}
 		if field.Kind() == reflect.Struct {
